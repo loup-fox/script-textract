@@ -64,7 +64,7 @@ for (let i = 0; i < totalCount; i += 1000) {
     .execute();
 
   for (const item of validations) {
-    if (item.ocrResultAws !== "" && item.ocrResultAzure !== "") {
+    if (item.ocrResultAws !== "" || item.ocrResultAzure !== "") {
       // console.log(`Skipping ${item.imagePath}`);
       continue;
     }
