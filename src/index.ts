@@ -2,7 +2,7 @@ import {
   AnalyzeExpenseCommand,
   TextractClient,
 } from "@aws-sdk/client-textract";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import env from "env-var";
 import _ from "lodash";
 import { db } from "./db.js";
@@ -13,17 +13,12 @@ const BUCKET_NAME = env.get("BUCKET_NAME").required().asString();
 
 const textract = new TextractClient({ region: AWS_REGION });
 
-console.log('Fetching records with empty "ocrResultAws" and "ocrResultAzure"');
-const validations = await db.query.ocrValidations.findMany({
-  where(fields, { eq, and }) {
-    return and(eq(fields.ocrResultAzure, ""), eq(fields.ocrResultAws, ""));
-  },
-});
+const [{ count: totalCount }] = await db
+  .select({ count: sql<number>`count(*)` })
+  .from(ocrValidations)
+  .execute();
 
-let processed: string[] = [];
-let avgTime: number = 0;
-
-const chunks = _.chunk(validations, 1);
+console.log(`Found ${totalCount} records`);
 
 function updateAverage(value: number) {
   return (processed.length * avgTime + value) / (processed.length + 1);
@@ -52,29 +47,39 @@ async function process(validation: OcrValidation) {
       .where(eq(ocrValidations.imagePath, validation.imagePath));
 
     processed.push(validation.imagePath);
-
-    console.log(
-      `[${(processed.length * 100) / validations.length}] - Processed ${
-        validation.imagePath
-      } (${processed.length}/${validations.length})`
-    );
   } catch (e) {
     console.error(e);
   }
 }
 
-for (const items of chunks) {
-  const start = Date.now();
-  await Promise.all(items.map((validation) => process(validation)));
-  const end = Date.now();
-  const time = (end - start) / 2;
-  avgTime = updateAverage(time);
-  console.log(`Average time: ${avgTime}ms`);
-  console.log(
-    `Time to completion: ${
-      (avgTime * (validations.length - processed.length)) / 1000
-    }s`
-  );
-}
+let processed: string[] = [];
+let avgTime: number = 0;
 
-console.log(validations.length);
+for (let i = 0; i < totalCount; i += 1000) {
+  const validations = await db
+    .select()
+    .from(ocrValidations)
+    .limit(1000)
+    .offset(i)
+    .execute();
+
+  for (const item of validations) {
+    if (item.ocrResultAws !== "" && item.ocrResultAzure !== "") {
+      // console.log(`Skipping ${item.imagePath}`);
+      continue;
+    }
+    const start = Date.now();
+    await process(item);
+    const end = Date.now();
+    const time = (end - start) / 2;
+    avgTime = updateAverage(time);
+
+    console.log(
+      `[${
+        (processed.length * 100) / totalCount
+      }] (time: ${time}, avg: ${avgTime}) - Processed ${item.imagePath} (${
+        processed.length
+      }/${totalCount})`
+    );
+  }
+}
