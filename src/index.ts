@@ -7,11 +7,15 @@ import env from "env-var";
 import _ from "lodash";
 import { db } from "./db.js";
 import { OcrValidation, ocrValidations } from "./schema.js";
+import { time } from "./helpers.js";
+// import { Redis } from "ioredis";
 
 const AWS_REGION = env.get("AWS_REGION").required().asString();
 const BUCKET_NAME = env.get("BUCKET_NAME").required().asString();
+// const REDIS_URI = env.get("REDIS_URI").required().asString();
 
 const textract = new TextractClient({ region: AWS_REGION });
+// const redis = new Redis(REDIS_URI);
 
 const [{ count: totalCount }] = await db
   .select({ count: sql<number>`count(*)` })
@@ -20,20 +24,29 @@ const [{ count: totalCount }] = await db
 
 console.log(`Found ${totalCount} records`);
 
-function updateAverage(value: number) {
+function updateAverage(avgTime: number, value: number) {
   return (processed.length * avgTime + value) / (processed.length + 1);
 }
 
 async function process(validation: OcrValidation) {
   try {
     console.log(`Processing ${validation.imagePath}`);
-    const parsed = await textract.send(
-      new AnalyzeExpenseCommand({
-        Document: {
-          S3Object: { Bucket: BUCKET_NAME, Name: validation.imagePath },
-        },
-      })
+
+    const [parsed, timeParsed] = await time(() =>
+      textract.send(
+        new AnalyzeExpenseCommand({
+          Document: {
+            S3Object: { Bucket: BUCKET_NAME, Name: validation.imagePath },
+          },
+        })
+      )
     );
+    avgParsingTime = updateAverage(avgParsingTime, timeParsed);
+
+    console.log(
+      `Parsed ${validation.imagePath} in ${timeParsed}ms (avg: ${avgParsingTime})`
+    );
+
     const documents = parsed.ExpenseDocuments;
     const pages = parsed.DocumentMetadata?.Pages;
     const result = JSON.stringify({
@@ -41,10 +54,18 @@ async function process(validation: OcrValidation) {
       pages,
     });
 
-    await db
-      .update(ocrValidations)
-      .set({ ocrResultAws: result })
-      .where(eq(ocrValidations.imagePath, validation.imagePath));
+    const [_, timeInsert] = await time(() =>
+      db
+        .update(ocrValidations)
+        .set({ ocrResultAws: result })
+        .where(eq(ocrValidations.idOcrValidation, validation.idOcrValidation))
+    );
+    // redis.set(`service-textract:insert:${validation.imagePath}`, result);
+    avgInsertTime = updateAverage(avgInsertTime, timeInsert);
+
+    console.log(
+      `Updated ${validation.imagePath} in ${timeInsert}ms (avg: ${avgInsertTime})`
+    );
 
     processed.push(validation.imagePath);
   } catch (e) {
@@ -53,7 +74,8 @@ async function process(validation: OcrValidation) {
 }
 
 let processed: string[] = [];
-let avgTime: number = 0;
+let avgInsertTime: number = 0;
+let avgParsingTime: number = 0;
 
 for (let i = 0; i < totalCount; i += 1000) {
   const validations = await db
@@ -68,18 +90,10 @@ for (let i = 0; i < totalCount; i += 1000) {
       // console.log(`Skipping ${item.imagePath}`);
       continue;
     }
-    const start = Date.now();
     await process(item);
-    const end = Date.now();
-    const time = (end - start) / 2;
-    avgTime = updateAverage(time);
 
     console.log(
-      `[${
-        (processed.length * 100) / totalCount
-      }] (time: ${time}, avg: ${avgTime}) - Processed ${item.imagePath} (${
-        processed.length
-      }/${totalCount})`
+      `Processed ${item.imagePath} (${processed.length}/${totalCount})`
     );
   }
 }
