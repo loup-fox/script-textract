@@ -29,7 +29,6 @@
     "@aws-sdk/client-textract": "^3.549.0",
     "drizzle-orm": "^0.30.7",
     "env-var": "^7.4.1",
-    "ioredis": "^5.3.2",
     "lodash": "^4.17.21",
     "mysql2": "^3.9.4"
   }

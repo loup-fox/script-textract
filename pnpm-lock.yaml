@@ -17,9 +17,6 @@ dependencies:
   env-var:
     specifier: ^7.4.1
     version: 7.4.1
-  ioredis:
-    specifier: ^5.3.2
-    version: 5.3.2
   lodash:
     specifier: ^4.17.21
     version: 4.17.21
@@ -1147,10 +1144,6 @@ packages:
     dev: true
     optional: true
 
-  /@ioredis/commands@1.2.0:
-    resolution: {integrity: sha512-Sx1pU8EM64o2BrqNpEO1CNLtKQwyhuXuqyfH7oGKCk+1a33d2r5saW8zNwm3j6BTExtjrv2BxTgzzkMwts6vGg==}
-    dev: false
-
   /@smithy/abort-controller@2.2.0:
     resolution: {integrity: sha512-wRlta7GuLWpTqtFfGo+nZyOO1vEvewdNR1R4rTxpC8XU6vG/NDyrFBhwLZsqg1NUoR1noVaXJPC/7ZK47QCySw==}
     engines: {node: '>=14.0.0'}
@@ -1649,11 +1642,6 @@ packages:
       timers-ext: 0.1.7
     dev: true
 
-  /cluster-key-slot@1.1.2:
-    resolution: {integrity: sha512-RMr0FhtfXemyinomL4hrWcYJxmX6deFdCxpJzhDttxgO1+bcCnkk+9drydLVDmAMG7NE6aN/fl4F7ucU/90gAA==}
-    engines: {node: '>=0.10.0'}
-    dev: false
-
   /commander@9.5.0:
     resolution: {integrity: sha512-KRs7WVDKg86PWiuAqhDrAQnTXZKraVcCc6vFdL14qrZ/DcWwuRo7VoiYXalXO7S5GKpqYiVEwCbgFDfxNHKJBQ==}
     engines: {node: ^12.20.0 || >=14}
@@ -1684,6 +1672,7 @@ packages:
         optional: true
     dependencies:
       ms: 2.1.2
+    dev: true
 
   /denque@2.1.0:
     resolution: {integrity: sha512-HVQE3AAb/pxF8fQAoiqpvg9i3evqug3hoiwakOyZAwJm+6vZehbkYXZ0l4JxS+I3QxM97v5aaRNhj8v5oBhekw==}
@@ -2020,23 +2009,6 @@ packages:
     resolution: {integrity: sha512-k/vGaX4/Yla3WzyMCvTQOXYeIHvqOKtnqBduzTHpzpQZzAskKMhZ2K+EnBiSM9zGSoIFeMpXKxa4dYeZIQqewQ==}
     dev: true
 
-  /ioredis@5.3.2:
-    resolution: {integrity: sha512-1DKMMzlIHM02eBBVOFQ1+AolGjs6+xEcM4PDL7NqOS6szq7H9jSaEkIUH6/a5Hl241LzW6JLSiAbNvTQjUupUA==}
-    engines: {node: '>=12.22.0'}
-    dependencies:
-      '@ioredis/commands': 1.2.0
-      cluster-key-slot: 1.1.2
-      debug: 4.3.4
-      denque: 2.1.0
-      lodash.defaults: 4.2.0
-      lodash.isarguments: 3.1.0
-      redis-errors: 1.2.0
-      redis-parser: 3.0.0
-      standard-as-callback: 2.1.0
-    transitivePeerDependencies:
-      - supports-color
-    dev: false
-
   /is-promise@2.2.2:
     resolution: {integrity: sha512-+lP4/6lKUBfQjZ2pdxThZvLUAafmZb8OAxFb8XXtiQmS35INgr85hdOGoEs124ez1FCnZJt6jau/T+alh58QFQ==}
     dev: true
@@ -2058,14 +2030,6 @@ packages:
       difflib: 0.2.4
       dreamopt: 0.8.0
     dev: true
-
-  /lodash.defaults@4.2.0:
-    resolution: {integrity: sha512-qjxPLHd3r5DnsdGacqOMU6pb/avJzdh9tFX2ymgoZE27BmjXrNy/y4LoaiTeAb+O3gL8AfpJGtqfX/ae2leYYQ==}
-    dev: false
-
-  /lodash.isarguments@3.1.0:
-    resolution: {integrity: sha512-chi4NHZlZqZD18a0imDHnZPrDeBbTtVN7GXMwuGdRH9qotxAjYs3aVLKc7zNOG9eddR5Ksd8rvFEBc9SsggPpg==}
-    dev: false
 
   /lodash.throttle@4.1.1:
     resolution: {integrity: sha512-wIkUCfVKpVsWo3JSZlc+8MB5it+2AN5W8J7YVMST30UrvcQNZ1Okbj+rbVniijTWE6FGYy4XJq/rHkas8qJMLQ==}
@@ -2131,6 +2095,7 @@ packages:
 
   /ms@2.1.2:
     resolution: {integrity: sha512-sGkPx+VjMtmA6MX27oA4FBFELFCZZ4S4XqeGOXCv68tT+jb3vk/RyaKWP0PTKyWtmLSM0b+adUTEvbs1PEaH2w==}
+    dev: true
 
   /mysql2@3.9.4:
     resolution: {integrity: sha512-OEESQuwxMza803knC1YSt7NMuc1BrK9j7gZhCSs2WAyxr1vfiI7QLaLOKTh5c9SWGz98qVyQUbK8/WckevNQhg==}
@@ -2162,18 +2127,6 @@ packages:
     dependencies:
       wrappy: 1.0.2
     dev: true
-
-  /redis-errors@1.2.0:
-    resolution: {integrity: sha512-1qny3OExCf0UvUV/5wpYKf2YwPcOqXzkwKKSmKHiE6ZMQs5heeE/c8eXK+PNllPvmjgAbfnsbpkGZWy8cBpn9w==}
-    engines: {node: '>=4'}
-    dev: false
-
-  /redis-parser@3.0.0:
-    resolution: {integrity: sha512-DJnGAeenTdpMEH6uAJRK/uiyEIH9WVsUmoLwzudwGJUwZPp80PDBWPHXSAGNPwNvIXAbe7MSUB1zQFugFml66A==}
-    engines: {node: '>=4'}
-    dependencies:
-      redis-errors: 1.2.0
-    dev: false
 
   /resolve-pkg-maps@1.0.0:
     resolution: {integrity: sha512-seS2Tj26TBVOC2NIc2rOe2y2ZO7efxITtLZcGSOnHHNOQ7CkiUBfw0Iw2ck6xkIhPwLhKNLS8BO+hEpngQlqzw==}
@@ -2214,10 +2167,6 @@ packages:
   /sqlstring@2.3.3:
     resolution: {integrity: sha512-qC9iz2FlN7DQl3+wjwn3802RTyjCx7sDvfQEXchwa6CWOx07/WVfh91gBmQ9fahw8snwGEWU3xGzOt4tFyHLxg==}
     engines: {node: '>= 0.6'}
-    dev: false
-
-  /standard-as-callback@2.1.0:
-    resolution: {integrity: sha512-qoRRSyROncaz1z0mvYqIE4lCd9p2R90i6GxW3uZv5ucSu8tU7B5HXUP1gG8pVZsYNVaXjk8ClXHPttLyxAL48A==}
     dev: false
 
   /strnum@1.0.5:

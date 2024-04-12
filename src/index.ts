@@ -8,14 +8,11 @@ import _ from "lodash";
 import { db } from "./db.js";
 import { OcrValidation, ocrValidations } from "./schema.js";
 import { time } from "./helpers.js";
-// import { Redis } from "ioredis";
 
 const AWS_REGION = env.get("AWS_REGION").required().asString();
 const BUCKET_NAME = env.get("BUCKET_NAME").required().asString();
-// const REDIS_URI = env.get("REDIS_URI").required().asString();
 
 const textract = new TextractClient({ region: AWS_REGION });
-// const redis = new Redis(REDIS_URI);
 
 const [{ count: totalCount }] = await db
   .select({ count: sql<number>`count(*)` })
@@ -30,8 +27,6 @@ function updateAverage(avgTime: number, value: number) {
 
 async function process(validation: OcrValidation) {
   try {
-    console.log(`Processing ${validation.imagePath}`);
-
     const [parsed, timeParsed] = await time(() =>
       textract.send(
         new AnalyzeExpenseCommand({
@@ -41,33 +36,20 @@ async function process(validation: OcrValidation) {
         })
       )
     );
-    avgParsingTime = updateAverage(avgParsingTime, timeParsed);
-
-    console.log(
-      `Parsed ${validation.imagePath} in ${timeParsed}ms (avg: ${avgParsingTime})`
-    );
-
     const documents = parsed.ExpenseDocuments;
     const pages = parsed.DocumentMetadata?.Pages;
     const result = JSON.stringify({
       documents,
       pages,
     });
-
     const [_, timeInsert] = await time(() =>
       db
         .update(ocrValidations)
         .set({ ocrResultAws: result })
         .where(eq(ocrValidations.idOcrValidation, validation.idOcrValidation))
     );
-    // redis.set(`service-textract:insert:${validation.imagePath}`, result);
-    avgInsertTime = updateAverage(avgInsertTime, timeInsert);
-
-    console.log(
-      `Updated ${validation.imagePath} in ${timeInsert}ms (avg: ${avgInsertTime})`
-    );
-
     processed.push(validation.imagePath);
+    return { timeParsed, timeInsert };
   } catch (e) {
     console.error(e);
   }
@@ -86,14 +68,23 @@ for (let i = 0; i < totalCount; i += 1000) {
     .execute();
 
   for (const item of validations) {
-    if (item.ocrResultAws !== "" || item.ocrResultAzure !== "") {
-      // console.log(`Skipping ${item.imagePath}`);
-      continue;
+    if (item.ocrResultAws === "" && item.ocrResultAzure === "") {
+      const times = await process(item);
+      if (times) {
+        avgInsertTime = updateAverage(avgInsertTime, times.timeInsert);
+        avgParsingTime = updateAverage(avgParsingTime, times.timeParsed);
+      }
     }
-    await process(item);
+
+    processed.push(item.imagePath);
 
     console.log(
-      `Processed ${item.imagePath} (${processed.length}/${totalCount})`
+      `[${((processed.length / totalCount) * 100).toFixed(2)}] - Processed ${
+        item.imagePath
+      } (${processed.length}/${totalCount})`
+    );
+    console.log(
+      `Avg Insert Time: ${avgInsertTime} | Avg Parsing Time: ${avgParsingTime}`
     );
   }
 }
